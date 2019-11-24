@@ -13,6 +13,9 @@ class TasksScreen extends Component {
         title: 'Tasks',
     });
 
+    started = []
+    finished = []
+
     state = {
         tasks: [],
     }
@@ -34,6 +37,28 @@ class TasksScreen extends Component {
         Store.addTask(task);
     }
 
+    // @TODO: replace createdAt with uid
+    handleStartRemoveItem = (createdAt) => {
+        this.started.push(createdAt);
+    }
+
+    handleFinishRemoveItem = (createdAt) => {
+        this.finished.push(createdAt);
+        if (this.started.every(el => this.finished.includes(el))) {
+            this.removeMany([...this.finished]);
+            this.started = [];
+            this.finished = [];
+        }
+    }
+
+    removeMany = (ids) => {
+        this.setState(state => {
+            const updated = state.tasks.filter(t => !ids.includes(t.createdAt));
+
+            return { ...state, tasks: updated };
+        });
+    }
+
     handleTaskPressed = (id) => {
         this.setState(state => {
             const updateAt = state.tasks.findIndex(t => t.createdAt == id);
@@ -46,21 +71,6 @@ class TasksScreen extends Component {
             return { ...state, tasks: updated };
         }, () => {
             // @TODO: update tasks cache
-        });
-    }
-
-    handleTaskRemoveButtonPressed = (id) => {
-        this.setState(state => {
-            const removeAt = state.tasks.findIndex(t => t.createdAt == id);
-            const updated = [...state.tasks];
-
-            if (~removeAt) {
-                updated.splice(removeAt, 1);
-            }
-
-            return { ...state, tasks: updated };
-        }, () => {
-            Store.resetTasks(this.state.tasks);
         });
     }
 
@@ -79,13 +89,12 @@ class TasksScreen extends Component {
                         <TaskListItem
                             task={{ ...item, project: item.projectID }}
                             onPress={this.handleTaskPressed}
-                            onRemove={this.handleTaskRemoveButtonPressed}
+                            onRemoveAnimationStart={this.handleStartRemoveItem}
+                            onRemoveAnimationFinish={this.handleFinishRemoveItem}
                         />
                     )}
-                    // @TODO: Replace this with separator in TaskListItem (those are stacking on multiple remove with animation)
-                    ItemSeparatorComponent={() => <View style={{ width: '100%', height: 1, backgroundColor: 'rgb(40,40,40)' }} />}
                 />
-                <TouchableWithoutFeedback onPress={() => { this.handleNewTask("gavno" + Math.random()) }}>
+                <TouchableWithoutFeedback onPress={() => { this.handleNewTask("shit" + Math.random()) }}>
                     <View style={{ color: 'white', fontWeight: 'bold', position: 'absolute', bottom: 0, backgroundColor: 'grey', alignItems: 'center', justifyContent: 'center', margin: 10, right: 0, width: 50, height: 50, borderRadius: 25 }}>
                         <Text>+</Text>
                     </View>

@@ -13,16 +13,19 @@ const {
     timing,
     call,
     cond,
+    and,
+    not,
     interpolate,
     Extrapolate,
     startClock,
+    clockRunning,
     stopClock,
 } = Animated;
 
 const HEIGHT = 60;
 const DURATION = 70;
 
-const runTiming = (clock, shouldRun, onFinish) => {
+const runTiming = (clock, shouldRun, onClockStart, onClockStop) => {
     const state = {
         finished: new Value(0),
         position: new Value(0),
@@ -39,21 +42,22 @@ const runTiming = (clock, shouldRun, onFinish) => {
     const shouldRunValue = new Value(shouldRun ? 1 : 0);
 
     return block([
-        cond(shouldRunValue, [
+        cond(and(shouldRunValue, not(clockRunning(clock))), [
             startClock(clock),
+            call([], onClockStart)
         ]),
         timing(clock, state, config),
         cond(state.finished,
             [
                 stopClock(clock),
-                call([], onFinish),
+                call([], onClockStop),
             ],
         ),
         state.position
     ]);
 };
 
-function TaskListItem({ task, onSelect, onRemove }) {
+function TaskListItem({ task, onSelect, onRemoveAnimationStart, onRemoveAnimationFinish }) {
     const [removing, setRemoving] = useState(false);
 
     function renderRemoveAction(progress, dragX) {
@@ -72,10 +76,14 @@ function TaskListItem({ task, onSelect, onRemove }) {
         clock: new Clock(),
     }), []);
 
-    const progress = runTiming(clock, removing, () => {
-        setRemoving(false);
-        onRemove(task.createdAt);
-    });
+    const progress = runTiming(clock, removing,
+        () => {
+            onRemoveAnimationStart(task.createdAt)
+        },
+        () => {
+            onRemoveAnimationFinish(task.createdAt);
+        }
+    );
 
     const height = interpolate(progress, {
         inputRange: [0, 1],
@@ -98,6 +106,7 @@ function TaskListItem({ task, onSelect, onRemove }) {
                     </View>
                 </View>
             </Swipeable>
+            <View style={{ flex: 1, width: '100%', height: 2, backgroundColor: 'white' }} />
         </Animated.View>
     );
 }
