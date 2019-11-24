@@ -28,7 +28,6 @@ const styles = StyleSheet.create({
         flex: 1,
         width: '100%',
         zIndex: 100,
-        backgroundColor: 'white',
     },
     body: {
         flex: 1,

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, Text } from 'react-native';
-import { Card } from 'react-native-paper';
 import Animated, { Easing } from 'react-native-reanimated';
 import { useMemoOne } from 'use-memo-one';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
@@ -21,7 +20,7 @@ const {
 } = Animated;
 
 const HEIGHT = 60;
-const DURATION = 100;
+const DURATION = 70;
 
 const runTiming = (clock, shouldRun, onFinish) => {
     const state = {
@@ -60,7 +59,7 @@ function TaskListItem({ task, onSelect, onRemove }) {
     function renderRemoveAction(progress, dragX) {
         return (
             <View style={styles.removeActionContainer}>
-                <Text style={{ color: 'white', fontWeight: 'bold' }}>Otsosi</Text>
+                <Text style={styles.removeActionText}>Otsosi</Text>
             </View>
         );
     }
@@ -87,35 +86,35 @@ function TaskListItem({ task, onSelect, onRemove }) {
     return (
         <Animated.View style={{ height }}>
             <Swipeable
-                friction={2}
-                leftThreshold={80}
-                rightThreshold={40}
+                friction={1.8}
+                rightThreshold={80}
                 renderRightActions={renderRemoveAction}
                 onSwipeableRightOpen={handleSwipeRight}
             >
-                <Card style={styles.container}>
-                    <ListItem title={task.name} subtitle={task.project} />
-                </Card>
+                {/* @TODO: Replace View with TouchableRipple (ripple effect starts on press or on swipe start)  */}
+                <View>
+                    <View style={styles.cardContainer}>
+                        <ListItem title={task.name} subtitle={task.project} />
+                    </View>
+                </View>
             </Swipeable>
         </Animated.View>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
+    cardContainer: {
         width: '100%',
         height: '100%',
         paddingHorizontal: 16,
         paddingVertical: 8,
         flexDirection: 'row',
         justifyContent: 'space-between',
-        backgroundColor: 'white',
+        backgroundColor: 'rgb(20,20,20)',
     },
-    removeBackground: {
-        ...StyleSheet.absoluteFillObject,
-        alignItems: 'center',
-        flexDirection: 'row',
-        justifyContent: 'space-between'
+    removeActionText: {
+        color: 'rgb(240,240,240)',
+        fontWeight: 'bold',
     },
     removeActionContainer: {
         width: '100%',

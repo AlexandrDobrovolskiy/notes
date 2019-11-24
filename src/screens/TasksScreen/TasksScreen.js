@@ -1,6 +1,5 @@
-import React, { Component, createRef } from 'react';
-import { View } from 'react-native';
-import { Transition, Transitioning } from 'react-native-reanimated';
+import React, { Component } from 'react';
+import { View, TouchableWithoutFeedback, Text } from 'react-native';
 
 import Store from '#lib/storage/SxsStore';
 import Task from '../../lib/models/Task';
@@ -29,7 +28,7 @@ class TasksScreen extends Component {
     handleNewTask = (name) => {
         const task = new Task(name, 'project');
         this.setState(prevState => {
-            prevState.tasks.push(task);
+            prevState.tasks.unshift(task);
             return prevState;
         });
         Store.addTask(task);
@@ -72,7 +71,7 @@ class TasksScreen extends Component {
     render() {
         const { tasks } = this.state;
         return (
-            <View>
+            <View style={{ flex: 1 }}>
                 <FlatList
                     data={tasks}
                     keyExtractor={this.keyExtractor}
@@ -83,14 +82,14 @@ class TasksScreen extends Component {
                             onRemove={this.handleTaskRemoveButtonPressed}
                         />
                     )}
-                    ListFooterComponent={(
-                        <AddItemButton
-                            title="Add Task"
-                            submitButtonTitle="Done"
-                            onSubmit={this.handleNewTask}
-                        />
-                    )}
+                    // @TODO: Replace this with separator in TaskListItem (those are stacking on multiple remove with animation)
+                    ItemSeparatorComponent={() => <View style={{ width: '100%', height: 1, backgroundColor: 'rgb(40,40,40)' }} />}
                 />
+                <TouchableWithoutFeedback onPress={() => { this.handleNewTask("gavno" + Math.random()) }}>
+                    <View style={{ color: 'white', fontWeight: 'bold', position: 'absolute', bottom: 0, backgroundColor: 'grey', alignItems: 'center', justifyContent: 'center', margin: 10, right: 0, width: 50, height: 50, borderRadius: 25 }}>
+                        <Text>+</Text>
+                    </View>
+                </TouchableWithoutFeedback>
             </View>
         );
     }

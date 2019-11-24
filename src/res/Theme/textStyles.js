@@ -18,7 +18,7 @@ module.exports = {
       color: 'black',
     },
     cardTitle: {
-      color: 'black',
+      color: 'rgb(240,240,240)',
       fontSize: 16,
       fontWeight: 'bold',
       letterSpacing: 0.5,
@@ -29,7 +29,7 @@ module.exports = {
       letterSpacing: 0.5,
     },
     cardSubtitle: {
-      color: 'black',
+      color: 'rgb(230,230,230)',
       fontSize: 12,
     },
   };
