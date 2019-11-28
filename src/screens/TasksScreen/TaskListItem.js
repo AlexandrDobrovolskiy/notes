@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Text } from 'react-native';
+import { View, StyleSheet, Text, Button } from 'react-native';
 import Animated, { Easing } from 'react-native-reanimated';
-import { useMemoOne } from 'use-memo-one';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
+import { Divider } from 'react-native-paper';
 
 import ListItem from '#lib/components/ListItem';
 
@@ -13,10 +13,7 @@ const {
     timing,
     call,
     cond,
-    and,
     not,
-    interpolate,
-    Extrapolate,
     startClock,
     clockRunning,
     stopClock,
@@ -25,27 +22,31 @@ const {
 const HEIGHT = 60;
 const DURATION = 70;
 
-const runTiming = (clock, shouldRun, onClockStart, onClockStop) => {
+const runTiming = (shouldRun, onClockStart, onClockStop) => {
+    if (!shouldRun) {
+        return new Value(HEIGHT);
+    }
+
+    const clock = new Clock();
     const state = {
+        position: new Value(HEIGHT),
         finished: new Value(0),
-        position: new Value(0),
         frameTime: new Value(0),
         time: new Value(0),
     };
-    
     const config = {
-        toValue: new Value(1),
+        toValue: new Value(0),
         duration: DURATION,
         easing: Easing.linear,
     };
 
-    const shouldRunValue = new Value(shouldRun ? 1 : 0);
-
     return block([
-        cond(and(shouldRunValue, not(clockRunning(clock))), [
-            startClock(clock),
-            call([], onClockStart)
-        ]),
+        cond(not(clockRunning(clock)),
+            [
+                startClock(clock),
+                call([] ,onClockStart)
+            ]
+        ),
         timing(clock, state, config),
         cond(state.finished,
             [
@@ -57,10 +58,10 @@ const runTiming = (clock, shouldRun, onClockStart, onClockStop) => {
     ]);
 };
 
-function TaskListItem({ task, onSelect, onRemoveAnimationStart, onRemoveAnimationFinish }) {
+function TaskListItem({ task, onSelect, onDoneButtonPress, onRemoveTransitionStart, onRemoveTransitionFinish }) {
     const [removing, setRemoving] = useState(false);
 
-    function renderRemoveAction(progress, dragX) {
+    function renderRemoveAction() {
         return (
             <View style={styles.removeActionContainer}>
                 <Text style={styles.removeActionText}>Otsosi</Text>
@@ -68,45 +69,55 @@ function TaskListItem({ task, onSelect, onRemoveAnimationStart, onRemoveAnimatio
         );
     }
 
+    function renderDoneAction() {
+        function handleDone() {
+            onDoneButtonPress(task.id);
+        }
+
+        return (
+            <>
+                <Button style={{ zIndex: 10 }} onPress={handleDone} title={task.done ? "Done" : "Not Done"}/>
+            </>
+        );
+    }
+
     function handleSwipeRight() {
         setRemoving(true);
     }
 
-    const { clock } = useMemoOne(() => ({
-        clock: new Clock(),
-    }), []);
+    function handleRemoveTransitionStart() {
+        onRemoveTransitionStart(task.id);
+    }
 
-    const progress = runTiming(clock, removing,
-        () => {
-            onRemoveAnimationStart(task.createdAt)
-        },
-        () => {
-            onRemoveAnimationFinish(task.createdAt);
-        }
+    function handleRemoveTransitionFinish() {
+        onRemoveTransitionFinish(task.id);
+    }
+
+    const height = runTiming(
+        removing,
+        handleRemoveTransitionStart,
+        handleRemoveTransitionFinish
     );
-
-    const height = interpolate(progress, {
-        inputRange: [0, 1],
-        outputRange: [HEIGHT, 0],
-        extrapolate: Extrapolate.CLAMP,
-    });
 
     return (
         <Animated.View style={{ height }}>
             <Swipeable
-                friction={1.8}
-                rightThreshold={80}
+                friction={1}
+                overshootRight={false}
                 renderRightActions={renderRemoveAction}
                 onSwipeableRightOpen={handleSwipeRight}
+                containerStyle={{ flexDirection: "column" }}
             >
-                {/* @TODO: Replace View with TouchableRipple (ripple effect starts on press or on swipe start)  */}
-                <View>
                     <View style={styles.cardContainer}>
-                        <ListItem title={task.name} subtitle={task.project} />
+                        <ListItem
+                            title={task.name}
+                            subtitle={task.project}
+                            containerStyle={{ flex: 1 }}
+                            renderActions={renderDoneAction}
+                        />
+                        <Divider style={styles.divider} />
                     </View>
-                </View>
-            </Swipeable>
-            <View style={{ flex: 1, width: '100%', height: 2, backgroundColor: 'white' }} />
+                </Swipeable>
         </Animated.View>
     );
 }
@@ -115,10 +126,7 @@ const styles = StyleSheet.create({
     cardContainer: {
         width: '100%',
         height: '100%',
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        flexDirection: 'row',
-        justifyContent: 'space-between',
+        justifyContent: 'center',
         backgroundColor: 'rgb(20,20,20)',
     },
     removeActionText: {
@@ -126,12 +134,14 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     removeActionContainer: {
-        width: '100%',
+        flex: 1,
         backgroundColor: '#f44336',
-        height: '100%',
         justifyContent: 'center',
         alignItems: 'flex-end',
         paddingHorizontal: 16,
+    },
+    divider: {
+        backgroundColor: 'rgba(255, 255, 255, .1)',
     },
 });
 

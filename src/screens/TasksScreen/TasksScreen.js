@@ -1,107 +1,120 @@
-import React, { Component } from 'react';
-import { View, TouchableWithoutFeedback, Text } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, TouchableWithoutFeedback, Text, StyleSheet } from 'react-native';
 
 import Store from '#lib/storage/SxsStore';
 import Task from '../../lib/models/Task';
 
-import AddItemButton from '../../lib/components/AddItemButton';
 import TaskListItem from './TaskListItem';
 import { FlatList } from 'react-native-gesture-handler';
+import { useMemoOne } from 'use-memo-one';
 
-class TasksScreen extends Component {
-    static navigationOptions = () => ({
-        title: 'Tasks',
-    });
+function TasksScreen() {
+    const [tasks, setTasks] = useState([]);
+    let { started, finished } = useMemoOne(() => ({
+        started: [],
+        finished: [],
+    }), []);
 
-    started = []
-    finished = []
+    useEffect(() => {
+        Store.getTasks()
+                .then(data => {
+                    if (data) {
+                        setTasks(data);
+                    }
+                });
+    }, []);
 
-    state = {
-        tasks: [],
+    function handleRemoveTransitionStart(id) {
+        started.push(id);
     }
 
-    componentDidMount() {
-        Store.getTasks().then(tasks => {
-            if (tasks) {
-                this.setState({ tasks });
-            }
-        });
-    }
-
-    handleNewTask = (name) => {
-        const task = new Task(name, 'project');
-        this.setState(prevState => {
-            prevState.tasks.unshift(task);
-            return prevState;
-        });
-        Store.addTask(task);
-    }
-
-    // @TODO: replace createdAt with uid
-    handleStartRemoveItem = (createdAt) => {
-        this.started.push(createdAt);
-    }
-
-    handleFinishRemoveItem = (createdAt) => {
-        this.finished.push(createdAt);
-        if (this.started.every(el => this.finished.includes(el))) {
-            this.removeMany([...this.finished]);
-            this.started = [];
-            this.finished = [];
+    function handleRemoveTransitionFinish(id) {
+        finished.push(id);
+        if (started.every(el => finished.includes(el))) {
+            removeMany(finished);
+            started = [];
+            finished = [];
         }
     }
 
-    removeMany = (ids) => {
-        this.setState(state => {
-            const updated = state.tasks.filter(t => !ids.includes(t.createdAt));
-
-            return { ...state, tasks: updated };
-        });
+    function removeMany(ids) {
+        setTasks(tasks => tasks.filter(t => !ids.includes(t.id)));
     }
 
-    handleTaskPressed = (id) => {
-        this.setState(state => {
-            const updateAt = state.tasks.findIndex(t => t.createdAt == id);
-            const updated = [...state.tasks];
+    function handleNewTask(name) {
+        const task = new Task(name, 'project');
+        setTasks(tasks => ([task, ...tasks]));
+        Store.addTask(task);
+    }
+
+    function handleDoneButtonPress(id) {
+        setTasks(tasks => {
+            const updateAt = tasks.findIndex(t => t.id === id);
+            const updated = [...tasks];
 
             if (~updateAt) {
                 updated[updateAt].done = !updated[updateAt].done;
             }
 
-            return { ...state, tasks: updated };
-        }, () => {
-            // @TODO: update tasks cache
+            return updated;
         });
     }
 
-    keyExtractor({ name, createdAt }) {
-        return `${name}_${createdAt}`;
+    function keyExtractor({ name, id }) {
+        return `${name}_${id}`;
     }
 
-    render() {
-        const { tasks } = this.state;
+    function renderItem({ item }) {
         return (
-            <View style={{ flex: 1 }}>
-                <FlatList
-                    data={tasks}
-                    keyExtractor={this.keyExtractor}
-                    renderItem={({ item }) => (
-                        <TaskListItem
-                            task={{ ...item, project: item.projectID }}
-                            onPress={this.handleTaskPressed}
-                            onRemoveAnimationStart={this.handleStartRemoveItem}
-                            onRemoveAnimationFinish={this.handleFinishRemoveItem}
-                        />
-                    )}
-                />
-                <TouchableWithoutFeedback onPress={() => { this.handleNewTask("shit" + Math.random()) }}>
-                    <View style={{ color: 'white', fontWeight: 'bold', position: 'absolute', bottom: 0, backgroundColor: 'grey', alignItems: 'center', justifyContent: 'center', margin: 10, right: 0, width: 50, height: 50, borderRadius: 25 }}>
-                        <Text>+</Text>
-                    </View>
-                </TouchableWithoutFeedback>
-            </View>
+            <TaskListItem
+                task={{ ...item, project: item.projectID }}
+                onRemoveTransitionStart={handleRemoveTransitionStart}
+                onRemoveTransitionFinish={handleRemoveTransitionFinish}
+                onDoneButtonPress={handleDoneButtonPress}
+            />
         );
     }
-};
+
+    function getItemLayout(_, index) {
+        return ({ length: 60, offset: 60 * index, index })
+    }
+
+    return (
+        <View style={{ flex: 1,  backgroundColor: 'rgb(20,20,20)' }}>
+            <FlatList
+                data={tasks}
+                keyExtractor={keyExtractor}
+                renderItem={renderItem}
+                getItemLayout={getItemLayout}
+            />
+            <TouchableWithoutFeedback onPress={() => { handleNewTask("shit") }}>
+                <View style={styles.addButtonContainer}>
+                    <Text>+</Text>
+                </View>
+            </TouchableWithoutFeedback>
+        </View>
+    );
+}
+
+TasksScreen.navigationOptions = () => ({
+    title: 'Tasks',
+});
+
+const styles = StyleSheet.create({
+    addButtonContainer: {
+        color: 'white',
+        fontWeight: 'bold',
+        position: 'absolute',
+        bottom: 0,
+        backgroundColor: 'grey',
+        alignItems: 'center',
+        justifyContent: 'center',
+        margin: 10,
+        right: 0,
+        width: 50,
+        height: 50,
+        borderRadius: 25,
+    },
+});
 
 export default TasksScreen;

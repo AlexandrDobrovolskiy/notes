@@ -3,7 +3,8 @@ class Task {
         this.projectID = projectID;
         this.name = name;
         this.done = false;
-        this. createdAt = new Date();
+        this.createdAt = new Date();
+        this.id = this.createdAt.getTime();
     }
 }
 
