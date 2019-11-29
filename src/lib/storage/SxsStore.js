@@ -20,7 +20,7 @@ class SxsStore {
     }
 
     resetTasks(tasks) {
-        this.storage.write(this.key, tasks);
+        return this.storage.write(this.key, tasks);
     }
 
     getTasks() {

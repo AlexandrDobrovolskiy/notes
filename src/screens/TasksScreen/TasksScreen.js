@@ -8,6 +8,7 @@ import TaskListItem from './TaskListItem';
 import { FlatList } from 'react-native-gesture-handler';
 import { useMemoOne } from 'use-memo-one';
 
+
 function TasksScreen() {
     const [tasks, setTasks] = useState([]);
     let { started, finished } = useMemoOne(() => ({
@@ -17,11 +18,11 @@ function TasksScreen() {
 
     useEffect(() => {
         Store.getTasks()
-                .then(data => {
-                    if (data) {
-                        setTasks(data);
-                    }
-                });
+            .then(data => {
+                if (data) {
+                    setTasks(data);
+                }
+            });
     }, []);
 
     function handleRemoveTransitionStart(id) {
@@ -38,12 +39,15 @@ function TasksScreen() {
     }
 
     function removeMany(ids) {
-        setTasks(tasks => tasks.filter(t => !ids.includes(t.id)));
+        const updated = tasks.filter(t => !ids.includes(t.id));
+        Store.resetTasks(updated).then(() => {
+            setTasks(updated);
+        });
     }
 
     function handleNewTask(name) {
         const task = new Task(name, 'project');
-        setTasks(tasks => ([task, ...tasks]));
+        setTasks(t => [task, ...t]);
         Store.addTask(task);
     }
 
@@ -55,7 +59,7 @@ function TasksScreen() {
             if (~updateAt) {
                 updated[updateAt].done = !updated[updateAt].done;
             }
-
+            Store.resetTasks(updated);
             return updated;
         });
     }
@@ -85,7 +89,8 @@ function TasksScreen() {
                 data={tasks}
                 keyExtractor={keyExtractor}
                 renderItem={renderItem}
-                getItemLayout={getItemLayout}
+                // getItemLayout={getItemLayout}
+                // rightThreshold={100}
             />
             <TouchableWithoutFeedback onPress={() => { handleNewTask("shit") }}>
                 <View style={styles.addButtonContainer}>

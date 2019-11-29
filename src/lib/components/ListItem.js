@@ -5,12 +5,12 @@ import { Divider } from 'react-native-paper';
 
 import { TextStyles } from '#theme';
 
-function ListItem({ title, subtitle, containerStyle, renderActions }) {
-
+function ListItem({ title, subtitle, containerStyle, renderActions, cross }) {
+    const additionalTextStyle = cross ? { textDecorationLine: 'line-through', color: '#4caf50' } : {};
     return (
         <View style={[styles.container, containerStyle]}>
             <View style={styles.body}>
-                <Text style={styles.title}>{title}</Text>
+                <Text style={[styles.title, additionalTextStyle]}>{title}</Text>
                 <Divider style={{ backgroundColor: 'rgba(255, 255, 255, .07)' }}/>
                 <Text style={styles.subtitle}>{subtitle}</Text>
             </View>

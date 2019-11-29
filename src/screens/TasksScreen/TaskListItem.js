@@ -1,88 +1,53 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, StyleSheet, Text, Button } from 'react-native';
-import Animated, { Easing } from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { Divider } from 'react-native-paper';
 
 import ListItem from '#lib/components/ListItem';
+import useTiming from '#lib/hooks/animations/useTiming';
 
-const {
-    Value,
-    Clock,
-    block,
-    timing,
-    call,
-    cond,
-    not,
-    startClock,
-    clockRunning,
-    stopClock,
-} = Animated;
-
-const HEIGHT = 60;
-const DURATION = 70;
-
-const runTiming = (shouldRun, onClockStart, onClockStop) => {
-    if (!shouldRun) {
-        return new Value(HEIGHT);
-    }
-
-    const clock = new Clock();
-    const state = {
-        position: new Value(HEIGHT),
-        finished: new Value(0),
-        frameTime: new Value(0),
-        time: new Value(0),
-    };
-    const config = {
-        toValue: new Value(0),
-        duration: DURATION,
-        easing: Easing.linear,
-    };
-
-    return block([
-        cond(not(clockRunning(clock)),
-            [
-                startClock(clock),
-                call([] ,onClockStart)
-            ]
-        ),
-        timing(clock, state, config),
-        cond(state.finished,
-            [
-                stopClock(clock),
-                call([], onClockStop),
-            ],
-        ),
-        state.position
-    ]);
-};
+const DEFAULT_HEIGHT = 60;
+const LEAVE_DURATION = 70;
 
 function TaskListItem({ task, onSelect, onDoneButtonPress, onRemoveTransitionStart, onRemoveTransitionFinish }) {
-    const [removing, setRemoving] = useState(false);
+    const config = {
+        fromValue: DEFAULT_HEIGHT,
+        toValue: 0,
+        duration: LEAVE_DURATION,
+    };
+    const { position, startTiming } = useTiming(
+        config,
+        handleRemoveTransitionStart,
+        handleRemoveTransitionFinish
+    );
 
     function renderRemoveAction() {
         return (
             <View style={styles.removeActionContainer}>
-                <Text style={styles.removeActionText}>Otsosi</Text>
+                <Text style={styles.removeActionText}>Remove</Text>
             </View>
         );
     }
 
     function renderDoneAction() {
-        function handleDone() {
-            onDoneButtonPress(task.id);
-        }
-
+        const additionalStyle = task.done ? styles.doneButtonRed : styles.doneButtonGreen;
+        const title = task.done ? "Not Done" : "Done";
         return (
-            <>
-                <Button style={{ zIndex: 10 }} onPress={handleDone} title={task.done ? "Done" : "Not Done"}/>
-            </>
+            <Button
+                style={[styles.doneButton, additionalStyle]}
+                onPress={handleDone}
+                title={title}
+            />
         );
     }
 
+    function handleDone() {
+        onDoneButtonPress(task.id);
+    }
+
     function handleSwipeRight() {
-        setRemoving(true);
+        startTiming();
     }
 
     function handleRemoveTransitionStart() {
@@ -93,14 +58,8 @@ function TaskListItem({ task, onSelect, onDoneButtonPress, onRemoveTransitionSta
         onRemoveTransitionFinish(task.id);
     }
 
-    const height = runTiming(
-        removing,
-        handleRemoveTransitionStart,
-        handleRemoveTransitionFinish
-    );
-
     return (
-        <Animated.View style={{ height }}>
+        <Animated.View style={{ height: position }}>
             <Swipeable
                 friction={1}
                 overshootRight={false}
@@ -114,6 +73,7 @@ function TaskListItem({ task, onSelect, onDoneButtonPress, onRemoveTransitionSta
                             subtitle={task.project}
                             containerStyle={{ flex: 1 }}
                             renderActions={renderDoneAction}
+                            cross={task.done}
                         />
                         <Divider style={styles.divider} />
                     </View>
@@ -139,6 +99,15 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'flex-end',
         paddingHorizontal: 16,
+    },
+    doneButton: {
+
+    },
+    doneButtonRed: {
+
+    },
+    doneButtonGreen: {
+
     },
     divider: {
         backgroundColor: 'rgba(255, 255, 255, .1)',
