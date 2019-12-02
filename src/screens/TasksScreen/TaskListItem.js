@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, Text, Button } from 'react-native';
+import { View, StyleSheet, Text, Button, TouchableWithoutFeedback } from 'react-native';
 import Animated from 'react-native-reanimated';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { Divider } from 'react-native-paper';
@@ -46,6 +46,10 @@ function TaskListItem({ task, onSelect, onDoneButtonPress, onRemoveTransitionSta
         onDoneButtonPress(task.id);
     }
 
+    function handleSelect() {
+        onSelect(task.id);
+    }
+
     function handleSwipeRight() {
         startTiming();
     }
@@ -62,21 +66,25 @@ function TaskListItem({ task, onSelect, onDoneButtonPress, onRemoveTransitionSta
         <Animated.View style={{ height: position }}>
             <Swipeable
                 friction={1}
+                overshootFriction={9}
                 overshootRight={false}
                 renderRightActions={renderRemoveAction}
                 onSwipeableRightOpen={handleSwipeRight}
                 containerStyle={{ flexDirection: "column" }}
+                rightThreshold={100}
             >
-                    <View style={styles.cardContainer}>
-                        <ListItem
-                            title={task.name}
-                            subtitle={task.project}
-                            containerStyle={{ flex: 1 }}
-                            renderActions={renderDoneAction}
-                            cross={task.done}
-                        />
-                        <Divider style={styles.divider} />
-                    </View>
+                    <TouchableWithoutFeedback onPress={handleSelect}>
+                        <View style={styles.cardContainer}>
+                            <ListItem
+                                title={task.name}
+                                subtitle={task.project}
+                                containerStyle={{ flex: 1 }}
+                                renderActions={renderDoneAction}
+                                cross={task.done}
+                            />
+                            <Divider style={styles.divider} />
+                        </View>
+                    </TouchableWithoutFeedback>
                 </Swipeable>
         </Animated.View>
     );

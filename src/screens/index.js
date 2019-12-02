@@ -1,7 +1,7 @@
-import ProjectScreen from './ProjectScreen/ProjectScreen';
+import EditTaskScreen from './EditTaskScreen/EditTaskScreen';
 import TasksScreen from './TasksScreen/TasksScreen';
 
 module.exports = {
-    ProjectScreen,
     TasksScreen,
+    EditTaskScreen,
 };

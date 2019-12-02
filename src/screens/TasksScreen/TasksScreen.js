@@ -3,13 +3,14 @@ import { View, TouchableWithoutFeedback, Text, StyleSheet } from 'react-native';
 
 import Store from '#lib/storage/SxsStore';
 import Task from '../../lib/models/Task';
-
 import TaskListItem from './TaskListItem';
 import { FlatList } from 'react-native-gesture-handler';
 import { useMemoOne } from 'use-memo-one';
 
+import { Screens } from '#lib/constants';
 
-function TasksScreen() {
+
+function TasksScreen({ navigation }) {
     const [tasks, setTasks] = useState([]);
     let { started, finished } = useMemoOne(() => ({
         started: [],
@@ -64,6 +65,10 @@ function TasksScreen() {
         });
     }
 
+    function handleSelectTask() {
+        navigation.navigate(Screens.EDIT_TASK);
+    }
+
     function keyExtractor({ name, id }) {
         return `${name}_${id}`;
     }
@@ -75,6 +80,7 @@ function TasksScreen() {
                 onRemoveTransitionStart={handleRemoveTransitionStart}
                 onRemoveTransitionFinish={handleRemoveTransitionFinish}
                 onDoneButtonPress={handleDoneButtonPress}
+                onSelect={handleSelectTask}
             />
         );
     }
@@ -89,8 +95,7 @@ function TasksScreen() {
                 data={tasks}
                 keyExtractor={keyExtractor}
                 renderItem={renderItem}
-                // getItemLayout={getItemLayout}
-                // rightThreshold={100}
+                getItemLayout={getItemLayout}
             />
             <TouchableWithoutFeedback onPress={() => { handleNewTask("shit") }}>
                 <View style={styles.addButtonContainer}>
